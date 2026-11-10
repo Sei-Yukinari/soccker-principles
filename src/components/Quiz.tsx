@@ -34,17 +34,22 @@ const RATING: Record<Rating, { title: string; badge: string; tone: string }> = {
 const button =
   "w-full rounded-xl border-2 px-4 py-2.5 text-left text-base font-bold transition active:scale-[0.98]";
 
-export function Quiz({
-  scene,
-  nextHref,
-  position,
-}: {
-  scene: Scene;
-  nextHref: string | null;
-  /** 「2 / 3」のような、今何問目か。 */
-  position: string;
-}) {
+export function Quiz({ scene }: { scene: Scene }) {
   const state = useAppState();
+
+  // 「今日の 5 問」の中の場面なら、その順番で次へ進む。原則ノートから開いた時はノートへ戻る。
+  const session = state?.session ?? [];
+  const index = session.indexOf(scene.id);
+  const inSession = index >= 0;
+  const nextId = inSession ? (session[index + 1] ?? null) : null;
+  const back = inSession ? { href: "/", text: "← トップ" } : { href: "/principles", text: "← 原則ノート" };
+  const next = nextId
+    ? { href: `/play/${nextId}`, text: "次の場面へ →" }
+    : inSession
+      ? { href: "/", text: "おわり！ トップへ" }
+      : { href: "/principles", text: "原則ノートにもどる" };
+  const position = inSession ? `今日の${session.length}問 ${index + 1} / ${session.length}` : "";
+
   const you = state?.profile?.name || DEFAULT_YOU;
   const youNumber = state?.profile?.number ?? null;
 
@@ -114,8 +119,8 @@ export function Quiz({
 
       <section className="flex flex-col gap-2 md:gap-3" aria-live="polite">
         <header className="flex items-center justify-between text-sm text-slate-500">
-          <Link href="/" className="font-bold text-slate-600 underline-offset-4 hover:underline">
-            ← トップ
+          <Link href={back.href} className="font-bold text-slate-600 underline-offset-4 hover:underline">
+            {back.text}
           </Link>
           <span>{position}</span>
         </header>
@@ -124,6 +129,21 @@ export function Quiz({
           <div className="rounded-xl bg-white p-4 shadow">
             <p className="text-lg font-bold">{scene.title}</p>
             <p className="mt-1 text-slate-600">動きをよく見よう…</p>
+            <ul className="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-sm font-bold text-slate-700">
+              <li className="flex items-center gap-1.5">
+                <span className="inline-block h-3.5 w-3.5 rounded-full border border-slate-900 bg-yellow-300" />
+                {you}
+              </li>
+              <li className="flex items-center gap-1.5">
+                <span className="inline-block h-3.5 w-3.5 rounded-full bg-blue-700" />
+                味方
+              </li>
+              <li className="flex items-center gap-1.5">
+                <span className="inline-block h-3.5 w-3.5 rounded-sm bg-red-600" />
+                相手
+              </li>
+              <li>▲ 上にせめる</li>
+            </ul>
           </div>
         )}
 
@@ -231,10 +251,10 @@ export function Quiz({
             </div>
 
             <Link
-              href={nextHref ?? "/"}
+              href={next.href}
               className={`${button} border-blue-700 bg-blue-700 text-center text-white`}
             >
-              {nextHref ? "次の場面へ →" : "おわり！ トップへ"}
+              {next.text}
             </Link>
           </>
         )}

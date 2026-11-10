@@ -9,8 +9,8 @@ import {
   type Scene,
 } from "./types";
 
-/** ボールを足元に置く時の、選手の中心からのずれ(m)。 */
-const BALL_OFFSET: Pos = [0.9, 0.9];
+/** ボールを足元に置く時の、選手の中心からのずれ(m)。駒の背番号にかぶらない位置。 */
+export const BALL_OFFSET: Pos = [1.5, 1.5];
 
 const clamp01 = (v: number) => Math.min(1, Math.max(0, v));
 const easeInOut = (u: number) => u * u * (3 - 2 * u);

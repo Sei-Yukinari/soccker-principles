@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { playerPosAt, positionsAt } from "./engine";
+import { BALL_OFFSET, playerPosAt, positionsAt } from "./engine";
 import { ENTITY_IDS, type Clip, type Pos, type Positions } from "./types";
 
 const base = Object.fromEntries(
@@ -47,8 +47,8 @@ describe("positionsAt", () => {
   it("足元にある間、ボールは選手についていく", () => {
     for (const t of [0, 0.7, 1.3, 2]) {
       const pos = positionsAt(base, clip, t);
-      expect(pos.ball[0] - pos.CM[0]).toBeCloseTo(0.9);
-      expect(pos.ball[1] - pos.CM[1]).toBeCloseTo(0.9);
+      expect(pos.ball[0] - pos.CM[0]).toBeCloseTo(BALL_OFFSET[0]);
+      expect(pos.ball[1] - pos.CM[1]).toBeCloseTo(BALL_OFFSET[1]);
     }
   });
 
@@ -58,12 +58,12 @@ describe("positionsAt", () => {
     const to = positionsAt(base, clip, 3).ball;
     expect(mid[0]).toBeCloseTo((from[0] + to[0]) / 2);
     expect(mid[1]).toBeCloseTo((from[1] + to[1]) / 2);
-    expect(to[0]).toBeCloseTo(base.FW[0] + 0.9);
+    expect(to[0]).toBeCloseTo(base.FW[0] + BALL_OFFSET[0]);
   });
 
   it("最後のキーフレームの後も、持っている選手についていく", () => {
     const pos = positionsAt(base, clip, 4);
-    expect(pos.ball[0]).toBeCloseTo(pos.FW[0] + 0.9);
+    expect(pos.ball[0]).toBeCloseTo(pos.FW[0] + BALL_OFFSET[0]);
   });
 
   it("時刻は 0 から長さの間に丸める", () => {
