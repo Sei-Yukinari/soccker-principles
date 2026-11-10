@@ -1,27 +1,31 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { getPhase, getPrinciple } from "@/lib/principles";
-import { sceneStatus, useAppState, type SceneStatus } from "@/lib/store";
+import { PRINCIPLES } from "@/lib/principles";
+import { principleProgress } from "@/lib/progress";
+import { startSession, useAppState } from "@/lib/store";
+import { TODAY_COUNT, pickToday } from "@/lib/today";
 import { SCENES } from "@/scenes";
 import { ProfileForm } from "./ProfileForm";
-import { RichText } from "./RichText";
-
-const STATUS: Record<SceneStatus, { text: string; tone: string }> = {
-  new: { text: "まだ", tone: "bg-slate-200 text-slate-600" },
-  tried: { text: "もう一度", tone: "bg-amber-200 text-amber-900" },
-  done: { text: "★ できた", tone: "bg-emerald-200 text-emerald-900" },
-};
 
 export function Home({ showDevLink }: { showDevLink: boolean }) {
   const state = useAppState();
+  const router = useRouter();
   const [editing, setEditing] = useState(false);
 
   const profile = state?.profile ?? null;
   const askFirst = state !== null && !state.profileAsked;
-  const start = SCENES.find((s) => sceneStatus(state, s.id) !== "done") ?? SCENES[0];
-  const doneCount = SCENES.filter((s) => sceneStatus(state, s.id) === "done").length;
+  const progress = PRINCIPLES.map((p) => principleProgress(state, SCENES, p.id));
+  const complete = progress.filter((p) => p.complete).length;
+  const count = Math.min(TODAY_COUNT, SCENES.length);
+
+  const startToday = () => {
+    const ids = pickToday(SCENES, state?.attempts ?? {}, count);
+    startSession(ids);
+    router.push(`/play/${ids[0]}`);
+  };
 
   return (
     <main className="mx-auto flex w-full max-w-xl flex-col gap-4 px-4 py-6">
@@ -57,40 +61,48 @@ export function Home({ showDevLink }: { showDevLink: boolean }) {
         )
       )}
 
-      <Link
-        href={`/play/${start.id}`}
-        className="rounded-2xl bg-blue-700 px-6 py-5 text-center text-xl font-black text-white shadow-lg active:scale-[0.98]"
+      <button
+        type="button"
+        onClick={startToday}
+        disabled={state === null}
+        className="rounded-2xl bg-blue-700 px-6 py-5 text-center text-xl font-black text-white shadow-lg active:scale-[0.98] disabled:opacity-60"
       >
-        {doneCount === 0 ? "はじめる" : doneCount === SCENES.length ? "もう一度やる" : "つづきから"}
+        今日の{count}問
         <span className="mt-1 block text-sm font-bold text-blue-100">
-          {SCENES.length}つの場面 ・ できた {doneCount} / {SCENES.length}
+          まだの場面と、もう一度やりたい場面が出るよ
+        </span>
+      </button>
+
+      <Link
+        href="/principles"
+        className="rounded-2xl bg-white px-4 py-4 shadow hover:ring-2 hover:ring-blue-600"
+      >
+        <span className="flex items-center justify-between">
+          <span className="text-lg font-black">原則ノート</span>
+          <span className="text-sm font-bold text-slate-600">
+            できた原則 {complete} / {PRINCIPLES.length}
+          </span>
+        </span>
+        <span className="mt-3 grid grid-cols-12 gap-1" aria-hidden>
+          {progress.map((p, i) => (
+            <span
+              key={PRINCIPLES[i].id}
+              className={`flex aspect-square items-center justify-center rounded-md text-xs font-black ${
+                p.complete
+                  ? "bg-emerald-500 text-white"
+                  : p.tried > 0
+                    ? "bg-amber-200 text-amber-900"
+                    : "bg-slate-200 text-slate-400"
+              }`}
+            >
+              {p.complete ? "★" : ""}
+            </span>
+          ))}
+        </span>
+        <span className="mt-2 block text-sm text-slate-600">
+          原則ごとに場面を選んで、見直せるよ →
         </span>
       </Link>
-
-      <ul className="flex flex-col gap-2">
-        {SCENES.map((scene, i) => {
-          const principle = getPrinciple(scene.principle);
-          const status = STATUS[sceneStatus(state, scene.id)];
-          return (
-            <li key={scene.id}>
-              <Link
-                href={`/play/${scene.id}`}
-                className="flex items-center justify-between gap-3 rounded-xl bg-white px-4 py-3 shadow hover:ring-2 hover:ring-blue-600"
-              >
-                <span>
-                  <span className="block text-xs font-bold text-slate-500">
-                    {i + 1}. <RichText text={getPhase(principle.phase).name} />
-                  </span>
-                  <span className="font-bold">{scene.title}</span>
-                </span>
-                <span className={`shrink-0 rounded-full px-3 py-1 text-xs font-bold ${status.tone}`}>
-                  {status.text}
-                </span>
-              </Link>
-            </li>
-          );
-        })}
-      </ul>
 
       {showDevLink && (
         <Link href="/dev/preview" className="text-center text-xs text-slate-400 underline">

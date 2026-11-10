@@ -18,10 +18,12 @@ export type AppState = {
   profile: Profile | null;
   /** 場面ごとの、最初に選んだ答えの記録。 */
   attempts: Record<string, Attempt[]>;
+  /** 今といている「今日の 5 問」の並び。 */
+  session: string[] | null;
 };
 
 const KEY = "soccer-principles:v1";
-const EMPTY: AppState = { profileAsked: false, profile: null, attempts: {} };
+const EMPTY: AppState = { profileAsked: false, profile: null, attempts: {}, session: null };
 
 export const NAME_MAX = 8;
 export const NUMBER_MIN = 1;
@@ -43,6 +45,7 @@ function parse(raw: string | null): AppState {
       profileAsked: Boolean(data.profileAsked),
       profile: data.profile ?? null,
       attempts: data.attempts ?? {},
+      session: Array.isArray(data.session) ? data.session : null,
     };
   } catch {
     return EMPTY;
@@ -96,6 +99,10 @@ export function useAppState(): AppState | null {
 
 export function saveProfile(profile: Profile | null) {
   write({ ...read(), profileAsked: true, profile });
+}
+
+export function startSession(sceneIds: string[]) {
+  write({ ...read(), session: sceneIds });
 }
 
 export function recordAttempt(sceneId: string, rating: Rating) {

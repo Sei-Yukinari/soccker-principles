@@ -12,7 +12,7 @@ import {
 const W = PITCH.width;
 const L = PITCH.length;
 const MARGIN_X = 2.5;
-const MARGIN_Y = 3.5;
+const MARGIN_Y = 6;
 const PIECE = 1.6;
 const PIECE_YOU = 1.9;
 
@@ -76,8 +76,42 @@ function Markings() {
       {box(GOAL_AREA.depth, GOAL_AREA.width, false)}
       <circle cx={W / 2} cy={PENALTY_MARK} r={0.35} fill="#ffffff" fillOpacity={0.85} />
       <circle cx={W / 2} cy={L - PENALTY_MARK} r={0.35} fill="#ffffff" fillOpacity={0.85} />
-      <rect x={(W - GOAL.width) / 2} y={-GOAL.depth} width={GOAL.width} height={GOAL.depth} {...line} strokeWidth={0.4} />
-      <rect x={(W - GOAL.width) / 2} y={L} width={GOAL.width} height={GOAL.depth} {...line} strokeWidth={0.4} />
+      {/* ゴールは守るチームの色。上が相手(赤)、下が自分(青)。 */}
+      <rect x={(W - GOAL.width) / 2} y={-GOAL.depth} width={GOAL.width} height={GOAL.depth} {...line} strokeWidth={0.4} fill="#dc2626" fillOpacity={0.85} />
+      <rect x={(W - GOAL.width) / 2} y={L} width={GOAL.width} height={GOAL.depth} {...line} strokeWidth={0.4} fill="#1d4ed8" fillOpacity={0.85} />
+    </g>
+  );
+}
+
+/** 攻める方向を示す。上のゴールへ向かう矢印と、2 つのゴールの名前。 */
+function Direction() {
+  const chevron = (cy: number) => (
+    <polyline
+      key={cy}
+      points={`${W / 2 - 6},${cy + 3} ${W / 2},${cy - 3} ${W / 2 + 6},${cy + 3}`}
+      fill="none"
+      stroke="#ffffff"
+      strokeOpacity={0.16}
+      strokeWidth={1.4}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+  );
+  const name = {
+    textAnchor: "middle" as const,
+    fontSize: 2.3,
+    fontWeight: 800,
+    fill: "#ffffff",
+  };
+  return (
+    <g pointerEvents="none">
+      {[16, 22, 46, 52].map(chevron)}
+      <text x={W / 2} y={-GOAL.depth - 1.3} {...name} fill="#fde047">
+        ▲ せめるゴール ▲
+      </text>
+      <text x={W / 2} y={L + GOAL.depth + 3} {...name}>
+        守るゴール
+      </text>
     </g>
   );
 }
@@ -91,7 +125,7 @@ function Grid() {
       {xs.map((x) => (
         <g key={`x${x}`}>
           <line x1={sx(x)} y1={0} x2={sx(x)} y2={L} stroke="#fff" strokeOpacity={0.2} strokeWidth={0.1} />
-          <text x={sx(x)} y={L + 3} textAnchor="middle" {...text}>{x}</text>
+          <text x={sx(x)} y={L + 4.2} textAnchor="middle" {...text}>{x}</text>
         </g>
       ))}
       {ys.map((y) => (
@@ -158,7 +192,7 @@ export function Pitch({
       viewBox={`${-MARGIN_X} ${-MARGIN_Y} ${W + MARGIN_X * 2} ${L + MARGIN_Y * 2}`}
       className={className}
       role="img"
-      aria-label="ピッチの図。上が相手のゴール。"
+      aria-label="ピッチの図。上がせめるゴール、下が守るゴール。"
       onClick={
         onPick
           ? (e) => {
@@ -173,7 +207,7 @@ export function Pitch({
     >
       <rect x={-MARGIN_X} y={-MARGIN_Y} width={W + MARGIN_X * 2} height={L + MARGIN_Y * 2} fill="#1f5c3a" />
       <Markings />
-      {debug && <Grid />}
+      {debug ? <Grid /> : <Direction />}
       {zones.map((z, i) => (
         <ZoneMark key={i} zone={z} />
       ))}
